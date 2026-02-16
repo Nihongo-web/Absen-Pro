@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Absen Pro v5.3 - Elite Production Edition</title>
+    <!-- PRODUCTION NOTE: For full production build, compile Tailwind via PostCSS. CDN used here for single-file portability. -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* DESIGN SYSTEM V5.3 */
+        :root {
+            --bg-main: #020617;
+            --bg-card: #0f172a;
+            --bg-elevated: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #1e293b;
+            --accent-blue: #3b82f6;
+            --accent-green: #10b981;
+            --accent-red: #f43f5e;
+            --accent-orange: #f59e0b;
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --safe-area-inset-bottom: env(safe-area-inset-bottom);
+        }
+
+        html.light {
+            --bg-main: #f1f5f9;
+            --bg-card: #ffffff;
+            --bg-elevated: #f8fafc;
+            /* WCAG AAA Contrast Adjustments */
+            --text-main: #020617;
+            --text-muted: #475569; 
+            --border-color: #cbd5e1;
+            --accent-blue: #1d4ed8;
+            --accent-green: #047857;
+            --accent-red: #be123c;
+            --accent-orange: #b45309;
+            --glass-border: rgba(0, 0, 0, 0.05);
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', 'Outfit', 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            -webkit-font-smoothing: subpixel-antialiased;
+            text-rendering: optimizeSpeed;
+            overflow-x: hidden;
+            user-select: none;
+            letter-spacing: 0.01em;
+            line-height: 1.6;
+        }
+
+        /* PERFORMANCE: Zero-Lag Animations */
+        * { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+
+        .container-custom { width: 100%; max-width: 800px; margin: 0 auto; padding: 0 1.25rem; }
+        
+        .glass-card { 
+            background-color: var(--bg-card); 
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+
+        /* INTERACTIVE STATES */
+        .btn-press { transition: transform 0.1s active; }
+        .btn-press:active { transform: scale(0.96); }
+
+        .status-Hadir { border-left: 6px solid var(--accent-green) !important; background: linear-gradient(to right, rgba(16, 185, 129, 0.05), transparent); }
+        .status-Izin { border-left: 6px solid var(--accent-orange) !important; background: linear-gradient(to right, rgba(245, 158, 11, 0.05), transparent); }
+        .status-Alpa { border-left: 6px solid var(--accent-red) !important; background: linear-gradient(to right, rgba(244, 63, 94, 0.05), transparent); }
+        
+        .btn-active-Hadir { background-color: var(--accent-green) !important; color: white !important; }
+        .btn-active-Izin { background-color: var(--accent-orange) !important; color: white !important; }
+        .btn-active-Alpa { background-color: var(--accent-red) !important; color: white !important; }
+
+        /* CALENDAR OPTIMIZATION */
+        .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+        .cal-day { aspect-ratio: 1; border-radius: 14px; border: 1px solid var(--border-color); display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; cursor: pointer; }
+        .cal-day.today { border: 2px solid var(--accent-blue); background: rgba(59, 130, 246, 0.05); }
+        .cal-dot { width: 4px; height: 4px; border-radius: 50%; }
+
+        /* ANIMATIONS */
+        @keyframes slideIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-slide { animation: slideIn 0.3s ease-out forwards; }
+
+        /* ACCESSIBILITY: Focus States */
+        input:focus, select:focus { border-color: var(--accent-blue) !important; outline: none; }
+    </style>
+</head>
+<body class="pb-32">
+
+    <!-- TOP NAVIGATION -->
+    <nav class="fixed top-0 left-0 w-full z-[100] glass-card backdrop-blur-2xl border-b transition-all duration-300">
+        <div class="container-custom h-16 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-gradient-to-tr from-blue-700 to-blue-500 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/30">
+                    <i data-lucide="calendar-check" class="text-white w-6 h-6"></i>
+                </div>
+                <div>
+                    <h1 class="text-sm font-semibold tracking-tight leading-none text-main">Absen<span class="text-blue-500">Pro</span></h1>
+                    <span class="text-[9px] font-semibold text-muted uppercase tracking-wider">v5.3 Enterprise</span>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <button onclick="ModalManager.toggle('guideModal')" class="p-2.5 text-muted hover:text-blue-500 transition-colors"><i data-lucide="help-circle" class="w-5 h-5"></i></button>
+                <div class="w-px h-6 bg-slate-700/20 mx-1"></div>
+                <button id="themeToggle" class="p-2.5 rounded-full bg-slate-800/10 hover:bg-slate-800/20 text-blue-500 transition-all"><i data-lucide="moon" id="themeIcon" class="w-5 h-5"></i></button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- HERO DASHBOARD -->
+    <header class="container-custom mt-20 pt-4 mb-6">
+        <div class="glass-card rounded-[2.5rem] p-6 lg:p-10 relative overflow-hidden bg-gradient-to-br from-slate-900/5 via-transparent to-slate-900/5">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div>
+                    <div class="flex items-center gap-2 mb-1">
+                        <span id="typeBadge" class="text-[9px] font-semibold px-2.5 py-1 rounded-lg uppercase tracking-widest">HARI INI</span>
+                        <p id="headerDate" class="text-[10px] font-semibold text-muted uppercase tracking-tighter opacity-60"></p>
+                    </div>
+                    <h2 id="displayDay" class="text-4xl font-extrabold italic text-main tracking-tight">...</h2>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-3">
+                    <div class="flex items-center bg-slate-800/10 p-1.5 rounded-2xl border border-slate-700/10">
+                        <button onclick="ui.stepDate(-1)" class="p-2.5 hover:bg-slate-800/20 rounded-xl text-muted hover:text-blue-500 transition-all"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
+                        <input type="date" id="mainDate" class="bg-transparent text-xs font-semibold px-3 focus:outline-none cursor-pointer text-blue-500">
+                        <button onclick="ui.stepDate(1)" class="p-2.5 hover:bg-slate-800/20 rounded-xl text-muted hover:text-blue-500 transition-all"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
+                    </div>
+                    <button onclick="ui.openCalendar()" class="h-12 px-6 bg-blue-600 text-white rounded-2xl text-[10px] font-semibold uppercase flex items-center gap-2 shadow-xl shadow-blue-600/20 hover:scale-105 active:scale-95 transition-all">
+                        <i data-lucide="bar-chart-3" class="w-4 h-4"></i> ANALYTIK
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="container-custom space-y-6">
+        
+        <!-- QUICK STATS -->
+        <section id="statsSection" class="grid grid-cols-2 md:grid-cols-4 gap-4 px-1"></section>
+
+        <!-- UTILITY BAR -->
+        <div class="flex flex-col sm:flex-row gap-4 items-center">
+            <div class="relative flex-1 w-full group">
+                <i data-lucide="search" class="absolute left-6 top-1/2 -translate-y-1/2 text-muted group-focus-within:text-blue-500 transition-colors w-5 h-5"></i>
+                <input type="text" id="uiSearch" placeholder="Cari Siswa / Jurusan..." 
+                    class="w-full h-16 glass-card rounded-[1.8rem] pl-16 pr-12 focus:outline-none focus:ring-2 focus:ring-blue-600/20 transition-all text-sm font-semibold text-main placeholder:text-muted">
+                <button id="clearSearch" onclick="ui.clearSearch()" class="absolute right-5 top-1/2 -translate-y-1/2 text-muted hover:text-red-500 transition-all hidden">
+                    <i data-lucide="x-circle" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="flex gap-2 w-full sm:w-auto">
+                <button onclick="ModalManager.toggle('jurusanModal')" class="h-16 flex-1 sm:px-6 bg-slate-800/5 hover:bg-slate-800/10 rounded-[1.8rem] border border-slate-700/10 flex items-center justify-center gap-2 transition-all">
+                    <i data-lucide="layers" class="w-5 h-5 text-blue-500"></i>
+                    <span class="text-[10px] font-semibold uppercase tracking-widest text-main">Kelola</span>
+                </button>
+                <button onclick="ui.modalSiswa()" class="h-16 flex-[2] sm:px-10 bg-blue-600 text-white rounded-[1.8rem] font-semibold text-[11px] uppercase flex items-center justify-center gap-3 shadow-2xl shadow-blue-600/30 hover:bg-blue-700 active:scale-95 transition-all">
+                    <i data-lucide="user-plus" class="w-5 h-5"></i>
+                    <span>Siswa Baru</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- FILTER CHIPS -->
+        <div class="flex gap-3 overflow-x-auto no-scrollbar py-2" id="filterNav">
+            <button onclick="ui.setFilter('ALL')" data-f="ALL" class="f-pill px-8 py-3 rounded-full text-[10px] font-semibold uppercase transition-all whitespace-nowrap shadow-sm">Semua</button>
+            <button onclick="ui.setFilter('X')" data-f="X" class="f-pill px-8 py-3 rounded-full text-[10px] font-semibold uppercase transition-all whitespace-nowrap shadow-sm">Kelas X</button>
+            <button onclick="ui.setFilter('XI')" data-f="XI" class="f-pill px-8 py-3 rounded-full text-[10px] font-semibold uppercase transition-all whitespace-nowrap shadow-sm">Kelas XI</button>
+            <button onclick="ui.setFilter('XII')" data-f="XII" class="f-pill px-8 py-3 rounded-full text-[10px] font-semibold uppercase transition-all whitespace-nowrap shadow-sm">Kelas XII</button>
+        </div>
+
+        <!-- MAIN LIST CONTAINER -->
+        <div id="appContainer" class="space-y-6 pb-20"></div>
+    </main>
+
+    <!-- BOTTOM ACTIONS (FLOAT) -->
+    <div class="fixed bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-3 z-[90]">
+        <button id="holidayBtn" onclick="ui.toggleHolidayMode()" class="h-14 px-6 rounded-2xl font-semibold text-[10px] uppercase shadow-2xl transition-all flex items-center gap-2"></button>
+        <div class="h-8 w-px bg-slate-700/20"></div>
+        <div class="flex gap-2">
+            <button onclick="ui.exportJson()" class="w-14 h-14 glass-card rounded-2xl flex items-center justify-center text-muted hover:text-green-500 transition-all"><i data-lucide="download" class="w-5 h-5"></i></button>
+            <label class="w-14 h-14 glass-card rounded-2xl flex items-center justify-center text-muted hover:text-orange-500 cursor-pointer transition-all">
+                <i data-lucide="upload-cloud" class="w-5 h-5"></i>
+                <input type="file" class="hidden" accept=".json" onchange="ui.importJson(event)">
+            </label>
+        </div>
+    </div>
+
+    <!-- MODAL SYSTEM (REUSABLE) -->
+    <div id="modalOverlay" class="fixed inset-0 z-[150] bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        
+        <!-- GUIDE MODAL (ADDED) -->
+        <div id="guideModal" class="glass-card w-full max-w-md rounded-[2.5rem] p-8 hidden animate-slide">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-semibold italic text-main">Panduan Cepat</h3>
+                <button onclick="ModalManager.toggle('guideModal')" class="p-2 text-muted hover:text-red-500"><i data-lucide="x" class="w-6 h-6"></i></button>
+            </div>
+            <div class="space-y-4 text-[11px] text-muted font-medium leading-relaxed overflow-y-auto max-h-[60vh] pr-2">
+                <div class="flex gap-3">
+                    <div class="w-8 h-8 rounded-full bg-blue-600/10 text-blue-500 flex items-center justify-center font-semibold">1</div>
+                    <p class="flex-1 pt-1.5"><strong class="text-main block mb-1">Absensi Harian</strong>Pilih kelas, lalu ketuk status (Hadir/Izin/Alpa) pada setiap siswa.</p>
+                </div>
+                <div class="flex gap-3">
+                    <div class="w-8 h-8 rounded-full bg-green-600/10 text-green-500 flex items-center justify-center font-semibold">2</div>
+                    <p class="flex-1 pt-1.5"><strong class="text-main block mb-1">Batch Action</strong>Gunakan tombol "SET HADIR" di header kelas untuk mengisi data sekelas sekaligus.</p>
+                </div>
+                <div class="flex gap-3">
+                    <div class="w-8 h-8 rounded-full bg-orange-600/10 text-orange-500 flex items-center justify-center font-semibold">3</div>
+                    <p class="flex-1 pt-1.5"><strong class="text-main block mb-1">Analisis & Backup</strong>Cek performa di menu "ANALYTIK". Gunakan tombol awan di bawah untuk ekspor data rutin.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- CALENDAR ANALYTICS -->
+        <div id="calModal" class="glass-card w-full max-w-md rounded-[2.5rem] overflow-hidden hidden animate-slide">
+            <div class="p-8 bg-blue-600 text-white flex justify-between items-center">
+                <div>
+                    <h3 class="text-2xl font-semibold italic">Analytics</h3>
+                    <p id="calMonthLabel" class="text-[9px] uppercase font-semibold tracking-widest opacity-80"></p>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="ui.navCal(-1)" class="p-2 bg-white/20 rounded-xl"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
+                    <button onclick="ui.navCal(1)" class="p-2 bg-white/20 rounded-xl"><i data-lucide="chevron-right" class="w-5 h-5"></i></button>
+                    <button onclick="ModalManager.toggle('calModal')" class="p-2 bg-white/20 rounded-xl"><i data-lucide="x" class="w-5 h-5"></i></button>
+                </div>
+            </div>
+            <div class="p-8 bg-card">
+                <div class="grid grid-cols-7 text-center text-[8px] font-semibold text-muted mb-4 uppercase tracking-widest">
+                    <span>M</span><span>S</span><span>S</span><span>R</span><span>K</span><span>J</span><span>S</span>
+                </div>
+                <div id="calGrid" class="cal-grid"></div>
+                <div class="mt-8 grid grid-cols-3 gap-3" id="calSummaryItems"></div>
+            </div>
+        </div>
+
+        <!-- MANAGE JURUSAN (RESPONSIVE FIX) -->
+        <div id="jurusanModal" class="glass-card w-full max-w-md rounded-[2.5rem] p-8 hidden animate-slide">
+            <div class="flex justify-between items-center mb-8">
+                <h3 class="text-2xl font-semibold italic text-main">Master Jurusan</h3>
+                <button onclick="ModalManager.toggle('jurusanModal')" class="p-2 text-muted hover:text-red-500"><i data-lucide="x" class="w-6 h-6"></i></button>
+            </div>
+            <form id="jurusanForm" class="flex flex-col sm:flex-row gap-3 mb-6">
+                <input type="text" id="jName" placeholder="Nama Jurusan Baru..." required class="flex-1 h-14 glass-card rounded-2xl px-5 bg-slate-800/10 font-semibold focus:ring-2 focus:ring-blue-600/30 text-main w-full">
+                <button type="submit" class="bg-blue-600 text-white h-14 sm:w-auto w-full px-8 rounded-2xl font-semibold text-[11px] uppercase transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2">
+                    <i data-lucide="plus-circle" class="w-4 h-4"></i> Add
+                </button>
+            </form>
+            <div id="jList" class="space-y-2 max-h-60 overflow-y-auto no-scrollbar pr-1"></div>
+        </div>
+
+        <!-- MANAGE SISWA -->
+        <div id="siswaModal" class="glass-card w-full max-w-md rounded-[2.5rem] p-8 hidden animate-slide">
+            <div class="flex justify-between items-center mb-8">
+                <h3 id="siswaTitle" class="text-2xl font-semibold italic text-main">Propil Siswa</h3>
+                <button onclick="ModalManager.toggle('siswaModal')" class="p-2 text-muted hover:text-red-500"><i data-lucide="x" class="w-6 h-6"></i></button>
+            </div>
+            <form id="siswaForm" class="space-y-5">
+                <input type="hidden" id="siswaId">
+                <div class="space-y-1.5">
+                    <label class="text-[10px] font-semibold text-muted uppercase tracking-widest ml-1">Nama Siswa</label>
+                    <input type="text" id="siswaNama" required class="w-full h-14 glass-card rounded-2xl px-5 bg-slate-800/10 font-semibold text-main">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-1.5">
+                        <label class="text-[10px] font-semibold text-muted uppercase tracking-widest ml-1">Kelas</label>
+                        <select id="siswaKelas" class="w-full h-14 glass-card rounded-2xl px-5 bg-slate-800/10 font-semibold appearance-none text-main">
+                            <option value="X">Kelas X</option><option value="XI">Kelas XI</option><option value="XII">Kelas XII</option>
+                        </select>
+                    </div>
+                    <div class="space-y-1.5">
+                        <label class="text-[10px] font-semibold text-muted uppercase tracking-widest ml-1">Jurusan</label>
+                        <select id="siswaJurusan" required class="w-full h-14 glass-card rounded-2xl px-5 bg-slate-800/10 font-semibold appearance-none text-main"></select>
+                    </div>
+                </div>
+                <div class="space-y-1.5">
+                    <label class="text-[10px] font-semibold text-muted uppercase tracking-widest ml-1">Gender</label>
+                    <div class="flex gap-2 p-1.5 bg-slate-800/10 rounded-2xl border border-slate-700/10">
+                        <label class="flex-1"><input type="radio" name="siswaGender" value="Laki-laki" checked class="hidden peer">
+                            <div class="py-3 text-center rounded-xl peer-checked:bg-blue-600 peer-checked:text-white text-[10px] font-semibold uppercase text-muted transition-all cursor-pointer">Laki-laki</div>
+                        </label>
+                        <label class="flex-1"><input type="radio" name="siswaGender" value="Perempuan" class="hidden peer">
+                            <div class="py-3 text-center rounded-xl peer-checked:bg-pink-600 peer-checked:text-white text-[10px] font-semibold uppercase text-muted transition-all cursor-pointer">Perempuan</div>
+                        </label>
+                    </div>
+                </div>
+                <div class="flex gap-3 pt-4">
+                    <button id="delSiswaBtn" type="button" class="w-14 h-14 bg-red-600/10 text-red-600 rounded-2xl border border-red-500/10 flex items-center justify-center hover:bg-red-600 hover:text-white transition-all hidden"><i data-lucide="trash-2"></i></button>
+                    <button type="submit" class="flex-1 h-14 bg-blue-600 text-white font-semibold rounded-2xl shadow-xl shadow-blue-600/20 active:scale-95 uppercase text-[11px] tracking-widest">Simpan Data</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- PARENT CALL ALERT -->
+        <div id="parentModal" class="glass-card w-full max-w-sm rounded-[3rem] p-10 text-center space-y-6 hidden animate-slide border-red-500/20">
+            <div class="w-24 h-24 bg-red-600 text-white rounded-full flex items-center justify-center mx-auto shadow-2xl shadow-red-600/40">
+                <i data-lucide="phone-off" class="w-10 h-10"></i>
+            </div>
+            <div>
+                <h3 class="text-2xl font-semibold text-red-500 italic uppercase">Panggilan Ortu!</h3>
+                <p class="text-[10px] text-muted font-semibold mt-2 uppercase tracking-widest leading-relaxed">Siswa di bawah terdeteksi 3+ Alpa.<br>Segera tindak lanjuti.</p>
+            </div>
+            <div id="parentAlertList" class="max-h-48 overflow-y-auto no-scrollbar space-y-2"></div>
+            <button onclick="ModalManager.toggle('parentModal')" class="w-full h-14 bg-slate-800 text-white font-semibold rounded-2xl uppercase text-[11px] tracking-widest">Tutup Peringatan</button>
+        </div>
+    </div>
+
+    <!-- NOTIFICATION TOAST -->
+    <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 z-[300] px-10 py-5 rounded-[2.5rem] shadow-2xl text-white font-semibold text-[11px] uppercase transition-all duration-500 opacity-0 pointer-events-none translate-y-20"></div>
+
+    <script shadow>
+        /** 
+         * ABSEN PRO CORE ENGINE V5.3
+         * Architecture: Modular OOP
+         * Principles: SOLID, DRY, SRP
+         */
+
+        class Utils {
+            static notify(m, type="success") {
+                const el = document.getElementById('toast');
+                el.innerText = m;
+                el.className = `fixed bottom-10 left-1/2 -translate-x-1/2 z-[300] px-10 py-5 rounded-[2.5rem] shadow-2xl text-white font-semibold text-[11px] uppercase transition-all duration-500 opacity-100 translate-y-0 ${type==='success'?'bg-blue-600 shadow-blue-600/30':'bg-red-600 shadow-red-600/30'}`;
+                setTimeout(() => el.classList.add('opacity-0', 'translate-y-20'), 3000);
+            }
+        }
+
+        class ModalManager {
+            static toggle(id) {
+                const overlay = document.getElementById('modalOverlay');
+                const modal = document.getElementById(id);
+                if (!modal) return console.error(`Modal ID '${id}' not found!`);
+                
+                const isH = modal.classList.contains('hidden');
+                
+                if(isH) {
+                    // Close others logic if needed, but for now simple toggle
+                    document.querySelectorAll('#modalOverlay > div').forEach(d => d.classList.add('hidden'));
+                    overlay.classList.remove('hidden');
+                    modal.classList.remove('hidden');
+                    lucide.createIcons();
+                } else {
+                    modal.classList.add('hidden');
+                    overlay.classList.add('hidden');
+                }
+            }
+        }
+
+        class ThemeManager {
+            constructor() {
+                this.theme = localStorage.getItem('theme_v5') || 'dark';
+                this.apply();
+                document.getElementById('themeToggle').onclick = () => this.toggle();
+            }
+            toggle() {
+                this.theme = this.theme === 'dark' ? 'light' : 'dark';
+                localStorage.setItem('theme_v5', this.theme);
+                this.apply();
+            }
+            apply() {
+                document.documentElement.className = this.theme;
+                document.getElementById('themeIcon').setAttribute('data-lucide', this.theme === 'dark' ? 'moon' : 'sun');
+                lucide.createIcons();
+            }
+        }
+
+        class DB {
+            static NAME = "AbsenPro_V5_3";
+            static STORES = ['jurusan', 'siswa', 'records', 'logs'];
+            
+            static async connect() {
+                return new Promise((r, j) => {
+                    const req = indexedDB.open(this.NAME, 1);
+                    req.onupgradeneeded = e => {
+                        const db = e.target.result;
+                        this.STORES.forEach(s => {
+                            if(!db.objectStoreNames.contains(s)) 
+                                db.createObjectStore(s, { keyPath: s === 'records' ? 'key' : (s === 'logs' ? 'date' : 'id'), autoIncrement: s !== 'records' && s !== 'logs' });
+                        });
+                    };
+                    req.onsuccess = () => r(req.result);
+                    req.onerror = () => j(req.error);
+                });
+            }
+
+            static async getAll(store) {
+                const db = await this.connect();
+                return new Promise(r => {
+                    const tx = db.transaction(store, 'readonly');
+                    tx.objectStore(store).getAll().onsuccess = e => r(e.target.result);
+                    tx.onerror = () => Utils.notify("DB Error: Read Failed", "error");
+                });
+            }
+
+            static async put(store, data) {
+                const db = await this.connect();
+                return new Promise(r => {
+                    const tx = db.transaction(store, 'readwrite');
+                    tx.objectStore(store).put(data).onsuccess = () => r(true);
+                    tx.onerror = () => Utils.notify("DB Error: Write Failed", "error");
+                });
+            }
+
+            static async del(store, key) {
+                const db = await this.connect();
+                return new Promise(r => {
+                    const tx = db.transaction(store, 'readwrite');
+                    tx.objectStore(store).delete(key).onsuccess = () => r(true);
+                    tx.onerror = () => Utils.notify("DB Error: Delete Failed", "error");
+                });
+            }
+
+            static async clearAll() {
+                const db = await this.connect();
+                this.STORES.forEach(s => db.transaction(s, 'readwrite').objectStore(s).clear());
+            }
+        }
+
+        class State {
+            constructor() {
+                this.data = {
+                    siswa: [], jurusan: [], logs: [], records: [],
+                    recordsToday: [], isHoliday: false,
+                    date: new Date().toLocaleDateString('en-CA'),
+                    search: "", filter: "ALL",
+                    view: { j: new Set(), k: new Set() }
+                };
+                this.listeners = [];
+            }
+
+            async sync() {
+                try {
+                    this.data.jurusan = (await DB.getAll('jurusan')).sort((a,b) => a.nama.localeCompare(b.nama));
+                    this.data.siswa = (await DB.getAll('siswa')).sort((a,b) => a.nama.localeCompare(b.nama));
+                    this.data.logs = await DB.getAll('logs');
+                    this.data.records = await DB.getAll('records');
+                    this.data.recordsToday = this.data.records.filter(r => r.key.startsWith(this.data.date + "_"));
+                    
+                    const h = this.data.logs.find(l => l.date === this.data.date);
+                    this.data.isHoliday = h ? h.isHoliday : false;
+                    this.notify();
+                } catch (e) { console.error("Sync Failed", e); }
+            }
+
+            notify() { this.listeners.forEach(fn => fn(this.data)); }
+            subscribe(fn) { this.listeners.push(fn); }
+
+            updateDate(d) { this.data.date = d; this.sync(); }
+            async setAttendance(id, status) {
+                const key = `${this.data.date}_${id}`;
+                const exists = this.data.recordsToday.find(r => r.key === key);
+                if(exists && exists.status === status) await DB.del('records', key);
+                else await DB.put('records', { key, status, at: Date.now() });
+                this.sync();
+            }
+        }
+
+        class UI {
+            constructor(state) {
+                this.state = state;
+                this.cMonth = new Date();
+                this.isRendering = false;
+                this.tm = new ThemeManager(); // Composition
+            }
+
+            init() {
+                this.state.subscribe(d => this.render(d));
+                this.bindEvents();
+                this.state.sync().then(() => this.checkAlerts());
+                document.getElementById('mainDate').value = this.state.data.date;
+            }
+
+            bindEvents() {
+                document.getElementById('mainDate').onchange = e => this.state.updateDate(e.target.value);
+                
+                const s = document.getElementById('uiSearch'), c = document.getElementById('clearSearch');
+                s.oninput = e => { 
+                    this.state.data.search = e.target.value; 
+                    c.classList.toggle('hidden', e.target.value === "");
+                    this.render(this.state.data); 
+                };
+
+                document.getElementById('jurusanForm').onsubmit = async e => {
+                    e.preventDefault();
+                    await DB.put('jurusan', { nama: document.getElementById('jName').value });
+                    document.getElementById('jName').value = "";
+                    this.state.sync();
+                };
+
+                document.getElementById('siswaForm').onsubmit = async e => {
+                    e.preventDefault();
+                    const id = document.getElementById('siswaId').value;
+                    const d = {
+                        nama: document.getElementById('siswaNama').value,
+                        kelas: document.getElementById('siswaKelas').value,
+                        jurusan: document.getElementById('siswaJurusan').value,
+                        gender: document.querySelector('input[name="siswaGender"]:checked').value
+                    };
+                    if(id) d.id = parseInt(id);
+                    await DB.put('siswa', d);
+                    ModalManager.toggle('siswaModal');
+                    this.state.sync();
+                    Utils.notify("Data Siswa Disimpan");
+                };
+
+                document.getElementById('delSiswaBtn').onclick = async () => {
+                    if(confirm("Hapus siswa ini selamanya?")) {
+                        await DB.del('siswa', parseInt(document.getElementById('siswaId').value));
+                        ModalManager.toggle('siswaModal');
+                        this.state.sync();
+                    }
+                };
+
+                // Event Delegation - Efficient
+                document.getElementById('appContainer').onclick = e => {
+                    const el = e.target.closest('[data-act]');
+                    if(!el) return;
+                    const { act, id, v } = el.dataset;
+                    if(act === 'j-toggle') this.toggleJ(id);
+                    if(act === 'k-toggle') this.toggleK(v);
+                    if(act === 'edit') this.editS(id);
+                    if(act === 'set') this.state.setAttendance(id, v);
+                    if(act === 'batch') this.batchH(v);
+                };
+            }
+
+            render(d) {
+                if(this.isRendering) return;
+                this.isRendering = true;
+
+                requestAnimationFrame(() => {
+                    this.updateHeader(d);
+                    this.updateStats(d);
+                    this.updateJOptions(d);
+                    this.updateJManageList(d);
+                    
+                    const container = document.getElementById('appContainer');
+                    const Q = d.search.toLowerCase();
+                    const F = d.filter;
+
+                    if(d.jurusan.length === 0) {
+                        container.innerHTML = `<div class="p-20 text-center opacity-40 font-semibold italic uppercase text-xs tracking-[0.2em] animate-slide">Database Jurusan Kosong</div>`;
+                        this.isRendering = false;
+                        return;
+                    }
+
+                    // GROUPING LOGIC (Modular)
+                    const tree = {};
+                    d.jurusan.forEach(j => tree[j.nama] = { id: j.id, n: j.nama, c: { X:[], XI:[], XII:[] } });
+                    d.siswa.filter(s => {
+                        const mS = s.nama.toLowerCase().includes(Q) || s.jurusan.toLowerCase().includes(Q);
+                        const mF = F === 'ALL' || s.kelas === F;
+                        return mS && mF;
+                    }).forEach(s => { if(tree[s.jurusan]) tree[s.jurusan].c[s.kelas].push(s); });
+
+                    let html = "";
+                    for(const jn in tree) {
+                        const j = tree[jn];
+                        const isMin = d.view.j.has(j.id);
+                        if(Q !== "" && !Object.values(j.c).some(x => x.length > 0)) continue;
+
+                        html += `
+                            <div class="space-y-4 animate-slide">
+                                <div data-act="j-toggle" data-id="${j.id}" class="flex justify-between items-center bg-slate-800/5 p-5 rounded-[2rem] border border-transparent hover:border-blue-500/20 cursor-pointer transition-all">
+                                    <h4 class="text-xl font-semibold flex items-center gap-3 text-main">
+                                        <i data-lucide="${isMin ? 'folder-closed' : 'folder-open'}" class="text-blue-500 w-6 h-6"></i>
+                                        ${j.n}
+                                    </h4>
+                                    <i data-lucide="chevron-down" class="text-muted transition-transform ${isMin ? '-rotate-90' : ''}"></i>
+                                </div>
+                                <div class="${isMin ? 'hidden' : 'space-y-4 px-1'}">
+                                    ${["X", "XI", "XII"].map(k => {
+                                        if(F !== 'ALL' && F !== k) return "";
+                                        const list = j.c[k];
+                                        const key = `${j.n}_${k}`;
+                                        const isExp = d.view.k.has(key);
+                                        const hCount = list.filter(sx => this.getS(sx.id) === 'Hadir').length;
+                                        return `
+                                            <div class="glass-card rounded-[2.2rem] overflow-hidden ${isExp ? 'ring-2 ring-blue-500/10 shadow-2xl' : ''}">
+                                                <div data-act="k-toggle" data-v="${key}" class="p-5 flex justify-between items-center cursor-pointer hover:bg-slate-500/5 transition-all">
+                                                    <div class="flex items-center gap-4">
+                                                        <div class="w-12 h-12 rounded-2xl bg-blue-600/10 text-blue-500 flex items-center justify-center font-semibold">${k}</div>
+                                                        <div>
+                                                            <h5 class="font-semibold text-xs text-main uppercase italic">Kelas ${k} ${j.n}</h5>
+                                                            <p class="text-[9px] font-semibold text-muted uppercase tracking-widest">${list.length} Siswa • ${hCount} Hadir</p>
+                                                        </div>
+                                                    </div>
+                                                    <button data-act="batch" data-v="${key}" class="h-10 px-4 bg-blue-600/10 text-blue-500 text-[10px] font-semibold rounded-xl border border-blue-600/10 hover:bg-blue-600 hover:text-white transition-all">SET HADIR</button>
+                                                </div>
+                                                <div class="${isExp ? 'p-5 pt-0 space-y-3' : 'hidden'}">
+                                                    ${list.length ? list.map(sx => this.tplSiswa(sx, d.isHoliday)).join('') : '<p class="text-center py-6 text-muted text-[9px] font-semibold opacity-30 uppercase italic">Belum ada siswa</p>'}
+                                                </div>
+                                            </div>
+                                        `;
+                                    }).join('')}
+                                </div>
+                            </div>
+                        `;
+                    }
+                    container.innerHTML = html || `<div class="py-20 text-center opacity-30 animate-slide"><i data-lucide="search-x" class="w-16 h-16 mx-auto mb-4"></i><p class="font-semibold uppercase text-xs">Pencarian Nihil</p></div>`;
+                    lucide.createIcons();
+                    this.isRendering = false;
+                });
+            }
+
+            tplSiswa(s, h) {
+                const st = this.getS(s.id);
+                const color = s.gender === 'Laki-laki' ? 'text-blue-500 border-blue-500/20' : 'text-pink-500 border-pink-500/20';
+                return `
+                    <div class="student-item glass-card p-4 rounded-[1.8rem] flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-2 status-${st} ${h?'holiday-mode':''}">
+                        <div class="flex items-center gap-4 cursor-pointer" data-act="edit" data-id="${s.id}">
+                            <div class="w-10 h-10 rounded-full flex items-center justify-center font-semibold border-2 bg-slate-800/10 ${color}">${s.nama.charAt(0)}</div>
+                            <div>
+                                <h6 class="font-semibold text-[13px] text-main leading-none mb-1">${s.nama}</h6>
+                                <p class="text-[9px] text-muted font-semibold uppercase tracking-widest">${s.gender}</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            ${['Hadir', 'Izin', 'Alpa'].map(vx => `
+                                <button data-act="set" data-id="${s.id}" data-v="${vx}" class="flex-1 sm:flex-none px-6 py-3.5 rounded-2xl text-[10px] font-semibold uppercase transition-all ${st === vx ? 'btn-active-'+vx : 'bg-slate-800/10 text-muted hover:bg-slate-800/20 shadow-sm'}">${vx}</button>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            getS(id) {
+                const r = this.state.data.recordsToday.find(x => x.key.endsWith("_" + id));
+                return r ? r.status : "";
+            }
+
+            updateHeader(d) {
+                const D = new Date(d.date);
+                document.getElementById('headerDate').innerText = D.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+                document.getElementById('displayDay').innerText = D.toLocaleDateString('id-ID', { weekday: 'long' });
+                
+                const isT = d.date === new Date().toLocaleDateString('en-CA');
+                const badge = document.getElementById('typeBadge');
+                badge.innerText = isT ? "HARI INI" : "HISTORI LOG";
+                badge.className = `text-[9px] font-semibold px-2.5 py-1 rounded-lg uppercase tracking-widest ${isT ? 'bg-green-600/10 text-green-500' : 'bg-orange-600/10 text-orange-500'}`;
+
+                const hb = document.getElementById('holidayBtn');
+                hb.innerHTML = d.isHoliday ? `<i data-lucide="play-circle"></i> AKTIFKAN KBM` : `<i data-lucide="coffee"></i> SET LIBUR`;
+                hb.className = d.isHoliday ? "h-14 px-8 rounded-2xl bg-green-600 text-white font-semibold text-[10px] uppercase shadow-xl flex items-center gap-2" : "h-14 px-8 rounded-2xl bg-red-600/10 text-red-600 border border-red-500/20 font-semibold text-[10px] uppercase flex items-center gap-2 hover:bg-red-600 hover:text-white";
+                lucide.createIcons();
+            }
+
+            updateStats(d) {
+                const counts = {
+                    "Siswa": d.siswa.length,
+                    "Hadir": d.recordsToday.filter(r => r.status === 'Hadir').length,
+                    "Izin": d.recordsToday.filter(r => r.status === 'Izin').length,
+                    "Alpa": d.recordsToday.filter(r => r.status === 'Alpa').length
+                };
+                document.getElementById('statsSection').innerHTML = Object.entries(counts).map(([k,v]) => `
+                    <div class="glass-card p-6 rounded-[2.2rem] border-b-4 ${k==='Hadir'?'border-b-green-500':k==='Izin'?'border-b-orange-500':k==='Alpa'?'border-b-red-500':'border-b-blue-600'}">
+                        <span class="text-[9px] font-semibold text-muted uppercase tracking-widest block mb-1 opacity-50">${k}</span>
+                        <h4 class="text-3xl font-extrabold text-main tracking-tight">${v}</h4>
+                    </div>
+                `).join('');
+            }
+
+            updateJOptions(d) { document.getElementById('siswaJurusan').innerHTML = d.jurusan.map(j => `<option value="${j.nama}">${j.nama}</option>`).join(''); }
+            updateJManageList(d) {
+                document.getElementById('jList').innerHTML = d.jurusan.map(j => `
+                    <div class="flex justify-between items-center p-5 glass-card rounded-2xl mb-2 hover:border-blue-500/30 transition-all">
+                        <span class="font-semibold text-sm text-main uppercase italic">${j.nama}</span>
+                        <button onclick="ui.delJ(${j.id}, '${j.nama}')" class="text-red-500 p-2 hover:bg-red-500/10 rounded-xl transition-all"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    </div>
+                `).join('') || '<p class="text-center text-muted text-[10px] font-semibold py-10 opacity-30 uppercase italic">Belum Ada Jurusan</p>';
+                lucide.createIcons();
+            }
+
+            openCalendar() {
+                this.cMonth = new Date(this.state.data.date);
+                this.drawCal();
+                ModalManager.toggle('calModal');
+            }
+            navCal(v) { this.cMonth.setMonth(this.cMonth.getMonth() + v); this.drawCal(); }
+            drawCal() {
+                const M = this.cMonth.getMonth(), Y = this.cMonth.getFullYear();
+                const F = new Date(Y, M, 1).getDay(), DM = new Date(Y, M+1, 0).getDate();
+                document.getElementById('calMonthLabel').innerText = this.cMonth.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+                
+                let html = "";
+                for(let i=0; i<F; i++) html += `<div class="cal-day opacity-0 pointer-events-none"></div>`;
+                
+                let [tH, tI, tA] = [0, 0, 0];
+                for(let d=1; d<=DM; d++) {
+                    const date = `${Y}-${String(M+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                    const ds = this.getDS(date);
+                    const isT = date === new Date().toLocaleDateString('en-CA');
+                    tH += ds.H; tI += ds.I; tA += ds.A;
+
+                    html += `
+                        <div onclick="ui.loadDate('${date}')" class="cal-day ${isT?'today':''} glass-card">
+                            <span class="font-semibold text-[11px] text-main leading-none">${d}</span>
+                            <div class="flex gap-0.5 mt-1.5">
+                                ${ds.H ? '<div class="cal-dot bg-green-500"></div>' : ''}
+                                ${ds.I ? '<div class="cal-dot bg-orange-500"></div>' : ''}
+                                ${ds.A ? '<div class="cal-dot bg-red-500"></div>' : ''}
+                            </div>
+                        </div>
+                    `;
+                }
+                document.getElementById('calGrid').innerHTML = html;
+                document.getElementById('calSummaryItems').innerHTML = [
+                    { k: 'Hadir', v: tH, c: 'green' }, { k: 'Izin', v: tI, c: 'orange' }, { k: 'Alpa', v: tA, c: 'red' }
+                ].map(x => `
+                    <div class="p-4 rounded-2xl bg-${x.c}-500/5 border border-${x.c}-500/10 text-center">
+                        <span class="block text-[8px] font-black text-${x.c}-500 uppercase">${x.k}</span>
+                        <h5 class="text-xl font-black text-${x.c}-500">${x.v}</h5>
+                    </div>
+                `).join('');
+            }
+            getDS(d) {
+                const r = this.state.data.records.filter(x => x.key.startsWith(d + "_"));
+                return { H: r.filter(x => x.status === 'Hadir').length, I: r.filter(x => x.status === 'Izin').length, A: r.filter(x => x.status === 'Alpa').length };
+            }
+
+            async checkAlerts() {
+                const violators = this.state.data.siswa.map(s => {
+                    const count = this.state.data.records.filter(r => r.key.endsWith("_" + s.id) && r.status === 'Alpa').length;
+                    return { s, count };
+                }).filter(v => v.count >= 3);
+
+                if(violators.length > 0) {
+                    document.getElementById('parentAlertList').innerHTML = violators.map(v => `
+                        <div class="p-4 glass-card rounded-2xl flex justify-between items-center bg-red-600/5 border-red-500/10">
+                            <div class="text-left leading-tight">
+                                <h6 class="font-black text-[12px] text-main">${v.s.nama}</h6>
+                                <p class="text-[8px] text-muted font-bold italic uppercase tracking-widest">${v.s.kelas} ${v.s.jurusan}</p>
+                            </div>
+                            <span class="px-3 py-1 bg-red-600 text-white text-[10px] font-black rounded-lg">${v.count} ALPA</span>
+                        </div>
+                    `).join('');
+                    ModalManager.toggle('parentModal');
+                }
+            }
+
+            setFilter(f) {
+                this.state.data.filter = f;
+                document.querySelectorAll('.f-pill').forEach(b => {
+                    const act = b.dataset.f === f;
+                    b.className = `f-pill px-8 py-3 rounded-full text-[10px] font-black uppercase transition-all whitespace-nowrap shadow-sm ${act ? 'bg-blue-600 text-white shadow-blue-600/30 scale-105' : 'bg-slate-800/5 text-muted hover:bg-slate-800/10'}`;
+                });
+                this.render(this.state.data);
+            }
+
+            toggleJ(id) { const s = parseInt(id); this.state.data.view.j.has(s) ? this.state.data.view.j.delete(s) : this.state.data.view.j.add(s); this.render(this.state.data); }
+            toggleK(v) { this.state.data.view.k.has(v) ? this.state.data.view.k.delete(v) : this.state.data.view.k.add(v); this.render(this.state.data); }
+            stepDate(v) { const d = new Date(this.state.data.date); d.setDate(d.getDate() + v); this.state.updateDate(d.toLocaleDateString('en-CA')); document.getElementById('mainDate').value = this.state.data.date; }
+            loadDate(d) { document.getElementById('mainDate').value = d; this.state.updateDate(d); ModalManager.toggle('calModal'); Utils.notify(`Log: ${d}`); }
+            clearSearch() { document.getElementById('uiSearch').value = ""; this.state.data.search = ""; document.getElementById('clearSearch').classList.add('hidden'); this.render(this.state.data); }
+            
+            modalSiswa() { 
+                if(this.state.data.jurusan.length === 0) return Utils.notify("Tambahkan Jurusan Dulu!", "error");
+                document.getElementById('siswaForm').reset(); document.getElementById('siswaId').value = ""; document.getElementById('siswaTitle').innerText = "SISWA BARU"; document.getElementById('delSiswaBtn').classList.add('hidden'); ModalManager.toggle('siswaModal'); 
+            }
+            editS(id) {
+                const s = this.state.data.siswa.find(x => x.id === parseInt(id));
+                document.getElementById('siswaId').value = s.id;
+                document.getElementById('siswaNama').value = s.nama;
+                document.getElementById('siswaKelas').value = s.kelas;
+                document.getElementById('siswaJurusan').value = s.jurusan;
+                document.querySelector(`input[name="siswaGender"][value="${s.gender}"]`).checked = true;
+                document.getElementById('siswaTitle').innerText = "EDIT PROFIL";
+                document.getElementById('delSiswaBtn').classList.remove('hidden');
+                ModalManager.toggle('siswaModal');
+            }
+            async batchH(v) {
+                const [jn, kl] = v.split('_');
+                const t = this.state.data.siswa.filter(x => x.jurusan === jn && x.kelas === kl);
+                for(let s of t) await DB.put('records', { key: `${this.state.data.date}_${s.id}`, status: 'Hadir', at: Date.now() });
+                this.state.sync(); Utils.notify("Satu Kelas Hadir!");
+            }
+            toggleHolidayMode() { DB.put('logs', { date: this.state.data.date, isHoliday: !this.state.data.isHoliday }).then(() => this.state.sync()); }
+            async delJ(id, n) { if(confirm(`Hapus Jurusan ${n}?\nSemua siswa di sini akan ikut terhapus.`)) { const ss = this.state.data.siswa.filter(x => x.jurusan === n); for(let s of ss) await DB.del('siswa', s.id); await DB.del('jurusan', id); this.state.sync(); } }
+            
+            async exportJson() {
+                const blob = new Blob([JSON.stringify({ 
+                    j: await DB.getAll('jurusan'), s: await DB.getAll('siswa'), r: await DB.getAll('records'), l: await DB.getAll('logs'), v: "5.3" 
+                })], { type: 'application/json' });
+                const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `AbsenPro_Backup_${this.state.data.date}.json`; a.click();
+            }
+            async importJson(e) {
+                const file = e.target.files[0]; if(!file) return;
+                const r = new FileReader();
+                r.onload = async (ev) => {
+                    try {
+                        const d = JSON.parse(ev.target.result);
+                        if(!confirm("RESTORE DATA SEKARANG?")) return;
+                        await DB.clearAll();
+                        for(let x of (d.j||[])) await DB.put('jurusan', x);
+                        for(let x of (d.s||[])) await DB.put('siswa', x);
+                        for(let x of (d.r||[])) await DB.put('records', x);
+                        for(let x of (d.l||[])) await DB.put('logs', x);
+                        location.reload();
+                    } catch(err) { Utils.notify("File Tidak Valid!", "error"); }
+                };
+                r.readAsText(file);
+            }
+        }
+
+        window.onload = () => { 
+            const state = new State();
+            window.ui = new UI(state);
+            ui.init(); 
+        };
+    </script>
+</body>
+</html>
